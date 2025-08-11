@@ -3,8 +3,12 @@ import pandas as pd
 import os
 from rapidfuzz import process
 
+# Get the current file directory
+BASE_DIR = os.path.dirname(__file__)
+file_path = os.path.join(BASE_DIR, "skull_shapes.xlsx")
+
 # Load Excel data
-df = pd.read_excel("skull_SHAPEs.xlsx", header=1)
+df = pd.read_excel("skull_shapes.xlsx", header=1)
 df.columns = df.columns.str.strip()  # Remove extra spaces from column names
 df['filename'] = df['filename'].str.lower()
 
