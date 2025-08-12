@@ -9,14 +9,31 @@ import numpy as np
 
 # ===== GOOGLE SHEETS CONFIG =====
 GOOGLE_SHEET_NAME = "skull_shapes"  # Replace with your sheet name
-SCOPE = [
-    "https://spreadsheets.google.com/feeds",
-    "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive",
-]
-CREDS = Credentials.from_service_account_file("google_credentials.json", scopes=SCOPE)
-gc = gspread.authorize(CREDS)
-sheet = gc.open(GOOGLE_SHEET_NAME).sheet1
+
+# Scopes for Google Sheets API
+SCOPE = ["https://spreadsheets.google.com/feeds",
+         "https://www.googleapis.com/auth/spreadsheets",
+         "https://www.googleapis.com/auth/drive.file",
+         "https://www.googleapis.com/auth/drive"
+         ]
+#  ===============for local run only ======================================================
+# CREDS = Credentials.from_service_account_file("google_credentials.json", scopes=SCOPE)
+# gc = gspread.authorize(CREDS)
+# sheet = gc.open(GOOGLE_SHEET_NAME).sheet1
+#  ===============for local run only ======================================================
+
+
+# ========for streamlit cloude only========================================
+# Load credentials from Streamlit secrets
+creds_dict = st.secrets["google_credentials"]
+creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPE)
+
+# Authorize the client
+client = gspread.authorize(creds)
+sheet = client.open(GOOGLE_SHEET_NAME).sheet1
+
+# ===========for streamlit cloude only=====================================
+
 
 # ===== FUNCTIONS =====
 def get_df():
