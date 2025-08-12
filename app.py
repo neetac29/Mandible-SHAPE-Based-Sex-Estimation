@@ -6,6 +6,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 import os
 import numpy as np
+import re
 
 # ===== GOOGLE SHEETS CONFIG =====
 GOOGLE_SHEET_NAME = "skull_shapes"  # Replace with your sheet name
@@ -38,7 +39,26 @@ sheet = client.open(GOOGLE_SHEET_NAME).sheet1
 # ===== FUNCTIONS =====
 def get_df():
     data = sheet.get_all_records()
-    return pd.DataFrame(data)
+    df = pd.DataFrame(data)
+
+    # Clean and normalize column names
+    cleaned_cols = [
+        re.sub(r"\s+", " ", str(col)).strip().lower()
+        for col in df.columns
+    ]
+
+    # Apply cleaned column names
+    df.columns = cleaned_cols
+
+    # Aliases to unify naming
+    rename_map = {
+        "file name": "filename",
+        "sl no.": "sl no",
+        "slno": "sl no"
+    }
+    df.rename(columns=rename_map, inplace=True)
+
+    return df
 
 def save_hash_to_sheet(row_index, hash_key):
     # +2 for header row and 0-index adjustment
