@@ -67,6 +67,23 @@ def get_sex_from_shape(shape):
         return "Male"
     else:
         return "Unknown"
+    
+def check_and_divide(ap, td):
+    if ap and td:  # both present and not empty
+        try:
+            result = float(ap) / float(td)
+            return result
+        except ZeroDivisionError:
+            return "Error: td cannot be zero."
+        except ValueError:
+            return "Error: ap and td must be numbers."
+    elif ap and not td:
+        return "Error: td is empty."
+    elif td and not ap:
+        return "Error: ap is empty."
+    else:
+        return "Error: both ap and td are empty."
+
 
 # ===== STREAMLIT UI =====
 st.title("Mandible shape & Sex Detection")
@@ -128,7 +145,11 @@ if uploaded_file:
         with st.form("new_entry_form"):
             filename_input = st.text_input("filename", filename_no_ext)
             shape_input = st.selectbox("shape", ["ROUND", "OVAL"])
-            other_columns = [col for col in df.columns if col not in ["sl no", "filename", "shape", "image hash key"]]
+
+            ap_input = st.text_input("ap")  # get ap value from user
+            td_input = st.text_input("td")  # get td value from user
+            
+            other_columns = [col for col in df.columns if col not in ["sl no", "filename", "shape", "image hash key", "ap", "td", "ap/td"]]
             extra_data = []
             for col in other_columns:
                 extra_data.append(st.text_input(col))
@@ -138,31 +159,41 @@ if uploaded_file:
             # Get the exact column order from the current DataFrame
             columns = df.columns.tolist()
 
+            ratio = check_and_divide(ap_input, td_input)
+
             # Build row as a dictionary
-            new_data_dict = {
-                "sl no": new_sl_no,
-                "filename": filename_input,
-                "shape": shape_input,
-                "image hash key": hash_key
-            }
+            if isinstance(ratio, str) and ratio.startswith("Error"):
+                st.error(ratio)
+            else:
+                new_data_dict = {
+                    "sl no": new_sl_no,
+                    "filename": filename_input,
+                    "shape": shape_input,
+                    "image hash key": hash_key,
+                    "ap": ap_input,
+                    "td": td_input,
+                    "ap/td": ratio
+                    
+                }
 
-            # Fill in any other columns from extra_data in correct order
-            for col, val in zip(
-                [c for c in columns if c not in ["sl no", "filename", "shape", "image hash key"]],
-                extra_data
-            ):
-                new_data_dict[col] = val
+                # Fill in any other columns from extra_data in correct order
+                for col, val in zip(
+                    [c for c in columns if c not in ["sl no", "filename", "shape", "image hash key", "ap", "td", "ap/td"]],
+                    extra_data
+                ):
+                    new_data_dict[col] = val
 
-            # Create ordered list for append_row based on sheet's column order
-            new_row_ordered = [new_data_dict.get(col, "") for col in columns]
+                # Create ordered list for append_row based on sheet's column order
+                new_row_ordered = [new_data_dict.get(col, "") for col in columns]
 
-            clean_row = []
-            for v in new_row_ordered:
-                if hasattr(v, "item"):  # NumPy scalar
-                    clean_row.append(v.item())
-                else:
-                    clean_row.append(v)
+                clean_row = []
+                for v in new_row_ordered:
+                    if hasattr(v, "item"):  # NumPy scalar
+                        clean_row.append(v.item())
+                    else:
+                        clean_row.append(v)
 
-            # Append the row to Google Sheet
-            append_new_row(clean_row)
-            st.success("New entry added to Google Sheet.")
+                # Append the row to Google Sheet
+                append_new_row(clean_row)
+                st.success("New entry added to Google Sheet.")
+                st.rerun()
