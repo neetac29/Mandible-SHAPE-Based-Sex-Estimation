@@ -106,7 +106,7 @@ def check_and_divide(ap, td):
 
 
 # ===== STREAMLIT UI =====
-st.title("Mandible shape & Sex Detection")
+st.title("Foramen Magnum Metrics for Forensic Sex Estimation: Advancing Accuracy with Machine Learning")
 
 uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
 
