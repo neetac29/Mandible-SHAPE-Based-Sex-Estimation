@@ -76,6 +76,10 @@ def append_new_row(new_data):
             clean_data.append(str(v))
     sheet.append_row(clean_data)
 
+def update_row_in_sheet(row_index, updated_values):
+    sheet.update(f"A{row_index + 2}", [updated_values])  # row_index + 2 for header offset
+
+
 def get_phash(image):
     return str(imagehash.phash(image))
 
@@ -102,7 +106,7 @@ def check_and_divide(ap, td):
     elif td and not ap:
         return "Error: ap is empty."
     else:
-        return "Error: both ap and td are empty."
+        return ""
 
 
 # ===== STREAMLIT UI =====
@@ -123,7 +127,7 @@ if uploaded_file:
               .str.lower()
               .str.replace(r"\s+", " ", regex=True)
     )
-    print("column::::::", df.columns)
+    
     if "filename" not in df.columns or "image hash key" not in df.columns:
         st.error(f"Required columns not found. Available: {list(df.columns)}")
         st.stop()
@@ -132,28 +136,29 @@ if uploaded_file:
     df["image hash key"] = df["image hash key"].astype(str).str.strip()
 
     match_row = None
+    match_index = None
 
     # Step 1: Match by filename
     filename_matches = df[df["filename"].str.lower() == filename_no_ext.lower()]
     if not filename_matches.empty:
         match_row = filename_matches.iloc[0]
+        match_index = filename_matches.index[0]
         # Save hash if empty
         if not match_row["image hash key"]:
-            save_hash_to_sheet(filename_matches.index[0], hash_key)
+            save_hash_to_sheet(match_index, hash_key)
             st.info("Hash key saved for this image.")
         sex = get_sex_from_shape(match_row["shape"])
-        st.success(f"Prediction: {sex}")
-        st.dataframe(match_row.to_frame().T)
+        st.success(f"Prediction of Image: {sex}")
 
     # Step 2: Match by hash (for same image, different filename)
     if match_row is None:
         hash_matches = df[df["image hash key"] == hash_key]
         if not hash_matches.empty:
             match_row = hash_matches.iloc[0]
+            match_index = hash_matches.index[0]
             st.info("Same image detected (different filename).")
             sex = get_sex_from_shape(match_row["shape"])
-            st.success(f"Prediction: {sex}")
-            st.dataframe(match_row.to_frame().T)
+            st.success(f"Prediction of Image: {sex}")
 
     # Step 3: No match found → prompt for new entry
     if match_row is None:
@@ -216,4 +221,34 @@ if uploaded_file:
                 # Append the row to Google Sheet
                 append_new_row(clean_row)
                 st.success("New entry added to Google Sheet.")
+                st.rerun()
+
+   # Step 4: Edit existing record with icon
+    if match_row is not None and match_index is not None:
+        if "edit_mode" not in st.session_state:
+            st.session_state.edit_mode = False
+        
+        st.write("### Matched Record")
+        col1, col2 = st.columns([8, 1])
+        with col1:
+            match_row_display = match_row.to_frame().T
+            match_row_display.columns = [col.upper() for col in match_row_display.columns]
+            st.dataframe(match_row_display)
+        with col2:
+            if st.button("✏️", key="edit_button"):
+                st.session_state.edit_mode = True
+
+        # Show edit form only when edit_mode is active
+        if st.session_state.edit_mode:
+            st.subheader("Edit Data")
+            with st.form("edit_entry_form"):
+                updated_values = []
+                for col in df.columns:
+                    updated_values.append(st.text_input(col, value=str(match_row[col])))
+                save_changes = st.form_submit_button("Save Changes")
+
+            if save_changes:
+                update_row_in_sheet(match_index, updated_values)
+                st.success("Row updated successfully!")
+                st.session_state.edit_mode = False  # Close form
                 st.rerun()
