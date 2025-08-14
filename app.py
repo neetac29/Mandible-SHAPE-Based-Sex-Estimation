@@ -68,8 +68,7 @@ def get_gs_client() -> gspread.Client:
 
     # ========for streamlit cloude only========================================
     # Load credentials from Streamlit secrets
-    creds_dict = st.secrets["google_credentials"] 
-    creds = Credentials.from_service_account_file(creds_dict, scopes=SCOPES)
+    creds = Credentials.from_service_account_info(st.secrets["google_credentials"], scopes=SCOPES)
     # ===========for streamlit cloude only=====================================
 
 
