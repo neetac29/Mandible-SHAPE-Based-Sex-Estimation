@@ -34,7 +34,7 @@ SCOPES = [
 ]
 
 #  ===============for local run only ======================================================
-SERVICE_ACCOUNT_FILE = "google_credentials.json"
+# SERVICE_ACCOUNT_FILE = "google_credentials.json"
 #  ===============for local run only ======================================================
 
 
@@ -64,12 +64,12 @@ if "postsave_sl_no" not in st.session_state:
 @st.cache_resource(show_spinner=False)
 def get_gs_client() -> gspread.Client:
     # for local run
-    creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+    # creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 
     # ========for streamlit cloude only========================================
     # Load credentials from Streamlit secrets
-    # creds_dict = st.secrets["google_credentials"] 
-    # creds = Credentials.from_service_account_file(creds_dict, scopes=SCOPES)
+    creds_dict = st.secrets["google_credentials"] 
+    creds = Credentials.from_service_account_file(creds_dict, scopes=SCOPES)
     # ===========for streamlit cloude only=====================================
 
 
